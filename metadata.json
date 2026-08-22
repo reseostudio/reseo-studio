@@ -1,0 +1,6 @@
+{
+  "name": "RESEO STUDIO - Domina Google Maps con NFC",
+  "description": "Convierte la satisfacción física de tus clientes en reseñas de 5 estrellas verificadas por GPS en menos de 3 segundos con el ecosistema NFC de RESEO STUDIO.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
