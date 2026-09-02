@@ -688,13 +688,6 @@ export default function App() {
             </a>
 
             <button
-              onClick={() => openAffiliatePortal()}
-              className="hidden sm:inline-flex items-center gap-1 px-3 py-2 rounded-full bg-[#FFFBEB] text-[#C27803] border border-[#C27803]/40 text-xs font-bold hover:bg-[#FEF3C7] transition-all cursor-pointer"
-            >
-              <span>🍽️ Afiliados (20%)</span>
-            </button>
-
-            <button
               onClick={() => openConfigurator('mostrador')}
               className="bg-[#047857] hover:bg-[#065F46] text-white px-3 sm:px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all hover:-translate-y-0.5 cursor-pointer font-['Outfit',sans-serif] tracking-[-0.03em]"
             >
@@ -2478,13 +2471,6 @@ export default function App() {
               className="hover:text-[#C27803] transition-colors cursor-pointer"
             >
               Términos y Condiciones
-            </button>
-            <span className="text-[#D6D3CD]">·</span>
-            <button
-              onClick={() => openAffiliatePortal()}
-              className="text-[#C27803] hover:underline font-bold transition-colors cursor-pointer"
-            >
-              🍽️ Portal de Afiliados (20% Comisión)
             </button>
             <span className="text-[#D6D3CD]">·</span>
             <button
