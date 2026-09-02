@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog de SEO Local & Ecosistema NFC | RESEO STUDIO</title>
+  <meta name="description" content="Estrategias probadas de SEO Local, captación física de reseñas NFC en 3 segundos y tácticas para dominar el Top 3 de Google Maps.">
+
+  <!-- Typography: Outfit (Headings) + DM Sans (Body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['DM Sans', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              bg: '#FAF9F5',
+              card: '#FFFFFF',
+              border: '#E5E5E0',
+              text: '#111827',
+              muted: '#4B5563',
+              gold: '#D97706',
+              goldHover: '#B45309',
+              goldBg: '#FEF3C7',
+              goldBorder: '#FDE68A',
+              blackBtn: '#0F172A',
+              blackBtnHover: '#1E293B'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Datos Estructurados JSON-LD Schema.org (AEO) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "@id": "https://reseostudio.serviciosmarketingia.cloud/blog/#blog",
+    "name": "Blog de SEO Local y Reseñas NFC - RESEO STUDIO",
+    "url": "https://reseostudio.serviciosmarketingia.cloud/blog/",
+    "description": "Estrategias avanzadas de posicionamiento local en Google Maps y conversión física con tecnología NFC.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "RESEO STUDIO",
+      "url": "https://reseostudio.serviciosmarketingia.cloud/",
+      "email": "reseostudio@gmail.com"
+    }
+  }
+  </script>
+</head>
+<body class="bg-brand-bg text-brand-text font-sans min-h-screen flex flex-col justify-between selection:bg-brand-goldBg selection:text-brand-gold">
+
+  <!-- Header Superior (Exactamente alineado con la Web Principal) -->
+  <header class="border-b border-brand-border bg-white/90 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+      
+      <!-- Logo RESEO STUDIO -->
+      <a href="/" class="flex items-center space-x-3 group">
+        <div class="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-display font-extrabold text-lg shadow-md group-hover:scale-105 transition-transform">
+          R
+        </div>
+        <span class="font-display font-extrabold text-xl tracking-tight text-black">
+          RESEO STUDIO
+        </span>
+      </a>
+      
+      <!-- Navegacion -->
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold text-gray-700">
+        <a href="/" class="hover:text-black transition">Inicio</a>
+        <a href="/blog/" class="text-black underline underline-offset-8 decoration-2 decoration-brand-gold font-bold">Blog AEO</a>
+        <a href="mailto:reseostudio@gmail.com" class="hover:text-black transition">Contacto</a>
+      </nav>
+
+      <!-- Boton CTA Principal (Píldora Negra estilo Video Demo / WhatsApp) -->
+      <a href="https://wa.me/34686478561?text=Hola%20RESEO%20STUDIO,%20he%20visto%20vuestro%20blog%20y%20quiero%20información%20sobre%20el%20sistema%20NFC" target="_blank" class="bg-brand-blackBtn hover:bg-brand-blackBtnHover text-white font-bold px-5 py-2.5 rounded-full transition-all duration-200 flex items-center space-x-2 text-xs sm:text-sm shadow-md hover:shadow-lg">
+        <span>💬 Solicitar Demo por WhatsApp</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="pt-16 pb-12 px-4 border-b border-brand-border/60 bg-gradient-to-b from-amber-500/5 via-brand-bg to-brand-bg">
+    <div class="max-w-4xl mx-auto text-center">
+      
+      <!-- Badge Píldora Dorada -->
+      <div class="inline-flex items-center space-x-2 bg-brand-goldBg border border-brand-goldBorder px-4 py-1.5 rounded-full text-brand-gold font-bold text-xs sm:text-sm uppercase tracking-wider mb-6 shadow-sm">
+        <span>⚡ ESTRATEGIAS DE CAPTACIÓN FÍSICA Y SEO LOCAL</span>
+      </div>
+
+      <h1 class="font-display text-4xl sm:text-6xl font-black text-black tracking-tight mb-6 leading-tight">
+        Multiplica tus reseñas de 5★ en <span class="text-brand-gold underline decoration-amber-400/40">menos de 3 segundos</span> y domina Google Maps.
+      </h1>
+
+      <p class="text-gray-600 text-lg sm:text-xl max-w-3xl mx-auto font-normal leading-relaxed mb-4">
+        El 95% de tus clientes dicen que te dejarán una valoración pero se olvidan al cruzar la puerta. Aquí te enseñamos cómo captar su opinión en el momento exacto del cobro y posicionar tu negocio en el <strong>Top 3 de Google Maps y ChatGPT</strong>.
+      </p>
+
+    </div>
+  </section>
+
+  <!-- Principal: Grilla de Artículos -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-16 flex-1 w-full">
+    
+    <div class="flex items-center justify-between mb-10 pb-4 border-b border-brand-border">
+      <h2 class="font-display text-2xl font-bold text-black flex items-center space-x-3">
+        <span>Guías y Análisis de Experto</span>
+        <span class="text-xs bg-brand-goldBg text-brand-gold border border-brand-goldBorder font-bold px-3 py-1 rounded-full">Casos Reales 2026</span>
+      </h2>
+      <span class="text-xs text-gray-500 font-medium hidden sm:block">Sin teoría abstracta • Enfocado a la Conversión</span>
+    </div>
+
+    <!-- Grilla de Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      
+      <!-- Card Artículo 1 -->
+      <article class="bg-brand-card border border-brand-border hover:border-brand-gold rounded-3xl p-7 transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1 shadow-sm hover:shadow-xl">
+        <div>
+          <div class="flex items-center justify-between text-xs mb-4">
+            <span class="bg-brand-goldBg text-brand-gold font-bold px-3 py-1 rounded-full border border-brand-goldBorder">Algoritmo Google Maps</span>
+            <span class="text-gray-400 font-medium">5 min lectura</span>
+          </div>
+          <h3 class="font-display text-xl font-bold text-black mb-3 group-hover:text-brand-gold transition-colors leading-snug">
+            <a href="/blog/guia-top-3-google-maps.html">Cómo Entrar en el Top 3 de Google Maps mediante Reseñas Físicas Verificadas por GPS</a>
+          </h3>
+          <p class="text-gray-600 text-sm leading-relaxed mb-6">
+            Por qué enviarle un link por WhatsApp a un cliente ya no funciona en 2026 y cómo la captación in-situ con tótems NFC le demuestra a Google que tu negocio es real.
+          </p>
+        </div>
+        <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+          <span class="text-xs text-gray-500 font-medium">Por RESEO STUDIO</span>
+          <a href="/blog/guia-top-3-google-maps.html" class="text-xs font-bold text-brand-gold group-hover:translate-x-1 transition-transform inline-flex items-center space-x-1">
+            <span>Leer artículo</span>
+            <span>→</span>
+          </a>
+        </div>
+      </article>
+
+      <!-- Card Artículo 2 -->
+      <article class="bg-brand-card border border-brand-border hover:border-brand-gold rounded-3xl p-7 transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1 shadow-sm hover:shadow-xl">
+        <div>
+          <div class="flex items-center justify-between text-xs mb-4">
+            <span class="bg-gray-100 text-gray-800 font-bold px-3 py-1 rounded-full border border-gray-200">Conversión en el Local</span>
+            <span class="text-gray-400 font-medium">4 min lectura</span>
+          </div>
+          <h3 class="font-display text-xl font-bold text-black mb-3 group-hover:text-brand-gold transition-colors leading-snug">
+            <a href="/blog/nfc-vs-qr-reseas-google.html">NFC vs Código QR para Reseñas: Por qué el NFC Multiplica x4 la Respuesta del Cliente</a>
+          </h3>
+          <p class="text-gray-600 text-sm leading-relaxed mb-6">
+            El código QR tradicional requiere abrir la cámara y enfocar. Descubre cómo eliminar la fricción con un toque directo y conseguir que hasta el 70% de tus clientes califiquen.
+          </p>
+        </div>
+        <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+          <span class="text-xs text-gray-500 font-medium">Por RESEO STUDIO</span>
+          <a href="/blog/nfc-vs-qr-reseas-google.html" class="text-xs font-bold text-brand-gold group-hover:translate-x-1 transition-transform inline-flex items-center space-x-1">
+            <span>Leer comparativa</span>
+            <span>→</span>
+          </a>
+        </div>
+      </article>
+
+      <!-- Card Artículo 3 -->
+      <article class="bg-brand-card border border-brand-border hover:border-brand-gold rounded-3xl p-7 transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1 shadow-sm hover:shadow-xl">
+        <div>
+          <div class="flex items-center justify-between text-xs mb-4">
+            <span class="bg-emerald-50 text-emerald-800 font-bold px-3 py-1 rounded-full border border-emerald-200">Protocolo de Equipo</span>
+            <span class="text-gray-400 font-medium">6 min lectura</span>
+          </div>
+          <h3 class="font-display text-xl font-bold text-black mb-3 group-hover:text-brand-gold transition-colors leading-snug">
+            <a href="/blog/como-conseguir-mas-reseas-google-maps.html">Cómo Pedir Reseñas en Restaurantes, Clínicas y Talleres sin Resultar Pesado</a>
+          </h3>
+          <p class="text-gray-600 text-sm leading-relaxed mb-6">
+            El método exacto de 3 segundos para que tus camareros, recepcionistas o técnicos aprovechen el pico de satisfacción del cliente justo antes de entregar la cuenta.
+          </p>
+        </div>
+        <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+          <span class="text-xs text-gray-500 font-medium">Por RESEO STUDIO</span>
+          <a href="/blog/como-conseguir-mas-reseas-google-maps.html" class="text-xs font-bold text-brand-gold group-hover:translate-x-1 transition-transform inline-flex items-center space-x-1">
+            <span>Leer guía</span>
+            <span>→</span>
+          </a>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- Banner CTA Directo -->
+    <section class="mt-16 bg-white border border-brand-border rounded-3xl p-8 sm:p-12 text-center shadow-lg relative overflow-hidden">
+      <div class="max-w-2xl mx-auto">
+        <h3 class="font-display text-3xl font-extrabold text-black mb-4">¿Quieres transformar tu mostrador en un imán de reseñas de 5★?</h3>
+        <p class="text-gray-600 text-base mb-8">
+          Te mostramos exactamente cómo funcionan nuestros expositores de mostrador y tarjetas de bolsillo configuradas para tu ficha de Google Business.
+        </p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="https://wa.me/34686478561?text=Hola%20RESEO%20STUDIO,%20quiero%20información%20sobre%20los%20expositores%20NFC" target="_blank" class="bg-brand-blackBtn hover:bg-brand-blackBtnHover text-white font-bold px-8 py-4 rounded-full transition shadow-md w-full sm:w-auto text-base">
+            💬 Hablar con un Especialista por WhatsApp
+          </a>
+          <a href="mailto:reseostudio@gmail.com" class="bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold px-8 py-4 rounded-full border border-gray-200 transition w-full sm:w-auto text-base">
+            ✉️ Contactar por Email
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer estilo elegante -->
+  <footer class="border-t border-brand-border bg-white py-10 text-gray-500 text-sm">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center space-x-3">
+        <div class="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center font-display font-bold text-xs">
+          R
+        </div>
+        <span class="font-display font-bold text-black text-base">RESEO STUDIO</span>
+      </div>
+      
+      <div class="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-600 font-medium">
+        <a href="https://wa.me/34686478561" target="_blank" class="hover:text-black transition">💬 Atendemos por WhatsApp</a>
+        <a href="mailto:reseostudio@gmail.com" class="hover:text-black transition">✉️ reseostudio@gmail.com</a>
+        <a href="https://reseostudio.serviciosmarketingia.cloud/llms.txt" class="text-gray-400 hover:text-black">🤖 LLMs Spec</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
