@@ -211,6 +211,21 @@ Cliente: ${message}`;
       console.error("Error sincronizando lead con Airtable:", e);
     }
   }
+  async function syncLeadToN8n(lead) {
+    try {
+      const url = "https://n8n.serviciosmarketingia.cloud/webhook/reseostudio-pedido";
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(lead)
+      });
+      if (res.ok) {
+        console.log("\u2705 Pedido/Lead enviado autom\xE1ticamente a n8n:", lead.negocio);
+      }
+    } catch (e) {
+      console.warn("n8n webhook notification:", e);
+    }
+  }
   app.post("/api/leads", (req, res) => {
     try {
       const lead = req.body;
@@ -221,6 +236,7 @@ Cliente: ${message}`;
       } else {
         leads.unshift(lead);
         syncLeadToAirtable(lead).catch(console.error);
+        syncLeadToN8n(lead).catch(console.error);
       }
       writeLeadsToFile(leads);
       console.log("Lead guardado correctamente en data/leads.json:", lead.negocio);

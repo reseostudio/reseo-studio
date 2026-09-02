@@ -192,6 +192,106 @@ REGLAS DE ORO OBLIGATORIAS:
     }
   }
 
+  // POST analyze Google Maps business with AI
+  app.post("/api/analyze-google-maps", async (req, res) => {
+    try {
+      const { url } = req.body;
+
+      if (!url) {
+        return res.status(400).json({ error: "URL is required" });
+      }
+
+      // Simulated analysis (en producción usarías scraping real)
+      // Por ahora genera análisis con IA basándose en la URL
+
+      const promptAnalisis = `Analiza esta URL de Google Maps: ${url}
+
+Extrae y genera:
+1. Nombre del negocio
+2. Estimación del rating (número entre 1-5)
+3. Estimación de número de reseñas
+4. Ciudad
+5. Tipo de negocio (restaurante, hotel, comercio, etc.)
+6. Email de contacto (formato genérico si no lo sabes)
+7. Teléfono (formato español genérico si no lo sabes)
+8. Análisis de potencial (Alto/Medio/Bajo)
+9. Urgencia (Alta/Media/Baja)
+10. Análisis detallado: Por qué necesitan mejorar sus reseñas y cómo nuestro sistema NFC les ayudaría
+
+Responde SOLO en formato JSON:
+{
+  "nombre": "Nombre del negocio",
+  "rating": 3.5,
+  "reviews": 12,
+  "ciudad": "Madrid",
+  "tipo": "restaurante",
+  "email": "info@negocio.com",
+  "telefono": "+34 XXX XXX XXX",
+  "potencial": "Alto",
+  "urgencia": "Alta",
+  "analisis": "Texto detallado del análisis...",
+  "contacto": "Responsable"
+}`;
+
+      // Intentar con OpenAI primero
+      const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
+
+      if (OPENAI_API_KEY) {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content: "Eres un analista experto en Google Maps y SEO local. Genera análisis realistas y convincentes."
+              },
+              {
+                role: "user",
+                content: promptAnalisis
+              }
+            ],
+            temperature: 0.7,
+          }),
+        });
+
+        const data = await response.json();
+        const analisisText = data.choices?.[0]?.message?.content || "{}";
+
+        try {
+          const analisisJSON = JSON.parse(analisisText);
+          return res.json(analisisJSON);
+        } catch (parseError) {
+          console.error("Error parsing AI response:", parseError);
+        }
+      }
+
+      // Fallback: análisis simulado
+      const mockAnalisis = {
+        nombre: "Negocio Ejemplo",
+        rating: 3.2,
+        reviews: 8,
+        ciudad: "Madrid",
+        tipo: "restaurante",
+        email: "info@negocio.com",
+        telefono: "+34 XXX XXX XXX",
+        potencial: "Alto",
+        urgencia: "Alta",
+        analisis: "Este negocio tiene pocas reseñas y un rating bajo. Hay una gran oportunidad de mejorar su posicionamiento en Google Maps con nuestro sistema NFC.",
+        contacto: "Responsable"
+      };
+
+      res.json(mockAnalisis);
+    } catch (error) {
+      console.error("Error analyzing Google Maps:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // GET all leads
   app.get("/api/leads", (_req, res) => {
     const leads = readLeadsFromFile();
@@ -238,6 +338,22 @@ REGLAS DE ORO OBLIGATORIAS:
     }
   }
 
+  async function syncLeadToN8n(lead: any) {
+    try {
+      const url = "https://n8n.serviciosmarketingia.cloud/webhook/reseostudio-pedido";
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lead)
+      });
+      if (res.ok) {
+        console.log("✅ Pedido/Lead enviado automáticamente a n8n:", lead.negocio);
+      }
+    } catch (e) {
+      console.warn("n8n webhook notification:", e);
+    }
+  }
+
   // POST create / update lead
   app.post("/api/leads", (req, res) => {
     try {
@@ -249,8 +365,9 @@ REGLAS DE ORO OBLIGATORIAS:
         leads[existingIdx] = { ...leads[existingIdx], ...lead };
       } else {
         leads.unshift(lead);
-        // Automatic sync to Airtable for newly captured leads
+        // Automatic sync to Airtable & n8n webhook for newly captured leads
         syncLeadToAirtable(lead).catch(console.error);
+        syncLeadToN8n(lead).catch(console.error);
       }
       
       writeLeadsToFile(leads);

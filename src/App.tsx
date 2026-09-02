@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LegalModal, LegalTab } from './components/LegalModal';
 import { CookieBanner } from './components/CookieBanner';
 import { CrmDashboard } from './components/CrmDashboard';
+import { AffiliatePortal } from './components/AffiliatePortal';
+import { QuoteConfiguratorModal } from './components/QuoteConfiguratorModal';
 import { LeadData, LeadStatus } from './types/crm';
 
 interface ChatMessage {
@@ -16,6 +18,20 @@ export default function App() {
   const [selectedPackForModal, setSelectedPackForModal] = useState('General');
   const [leadSubmitted, setLeadSubmitted] = useState(false);
   const [submittedLeadData, setSubmittedLeadData] = useState<LeadData | null>(null);
+
+  // Quote Configurator & Affiliate Portal Modals
+  const [isAffiliatePortalOpen, setIsAffiliatePortalOpen] = useState(false);
+  const [isQuoteConfiguratorOpen, setIsQuoteConfiguratorOpen] = useState(false);
+  const [selectedPackForConfigurator, setSelectedPackForConfigurator] = useState('mostrador');
+
+  const openConfigurator = (packId: string = 'mostrador') => {
+    setSelectedPackForConfigurator(packId);
+    setIsQuoteConfiguratorOpen(true);
+  };
+
+  const openAffiliatePortal = () => {
+    setIsAffiliatePortalOpen(true);
+  };
 
   // Legal Modal State (GDPR / RGPD & Compliance)
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
@@ -651,31 +667,45 @@ export default function App() {
             </span>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-6">
+          <div className="flex items-center gap-2 sm:gap-4">
             <a
               href="#algoritmo"
-              className="hidden md:inline-block text-[#57534E] hover:text-[#141311] text-sm font-semibold transition-colors"
+              className="hidden lg:inline-block text-[#57534E] hover:text-[#141311] text-xs font-semibold transition-colors"
             >
-              Algoritmo Google
+              Algoritmo
             </a>
             <a
               href="#simulador"
-              className="hidden md:inline-block text-[#57534E] hover:text-[#141311] text-sm font-semibold transition-colors"
+              className="hidden lg:inline-block text-[#57534E] hover:text-[#141311] text-xs font-semibold transition-colors"
             >
-              Simulador NFC
+              Simulador
             </a>
             <a
               href="#precios"
-              className="hidden md:inline-block text-[#57534E] hover:text-[#141311] text-sm font-semibold transition-colors"
+              className="hidden md:inline-block text-[#57534E] hover:text-[#141311] text-xs font-semibold transition-colors"
             >
-              Tarifas Oficiales
+              Tarifas (59€)
             </a>
 
             <button
-              onClick={() => openDemoModal()}
-              className="bg-[#141311] hover:bg-[#2A2826] text-white px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm transition-all hover:-translate-y-0.5 cursor-pointer font-['Outfit',sans-serif] tracking-[-0.03em]"
+              onClick={() => openAffiliatePortal()}
+              className="hidden sm:inline-flex items-center gap-1 px-3 py-2 rounded-full bg-[#FFFBEB] text-[#C27803] border border-[#C27803]/40 text-xs font-bold hover:bg-[#FEF3C7] transition-all cursor-pointer"
             >
-              <span>🎬 Solicitar Vídeo Demo</span>
+              <span>🍽️ Afiliados (20%)</span>
+            </button>
+
+            <button
+              onClick={() => openConfigurator('mostrador')}
+              className="bg-[#047857] hover:bg-[#065F46] text-white px-3 sm:px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all hover:-translate-y-0.5 cursor-pointer font-['Outfit',sans-serif] tracking-[-0.03em]"
+            >
+              <span>📝 Presupuesto</span>
+            </button>
+
+            <button
+              onClick={() => openDemoModal()}
+              className="bg-[#141311] hover:bg-[#2A2826] text-white px-3 sm:px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all hover:-translate-y-0.5 cursor-pointer font-['Outfit',sans-serif] tracking-[-0.03em]"
+            >
+              <span>🎬 Vídeo Demo</span>
             </button>
           </div>
         </div>
@@ -1781,10 +1811,10 @@ export default function App() {
               </div>
 
               <button
-                onClick={() => openDemoModal('Pack Mostrador Pro (59€)')}
-                className="w-full bg-[#F3F1EC] hover:bg-[#141311] text-[#141311] hover:text-white border border-[#E7E4DC] py-3.5 px-4 rounded-full font-bold text-xs sm:text-sm transition-all cursor-pointer"
+                onClick={() => openConfigurator('mostrador')}
+                className="w-full bg-[#141311] hover:bg-[#2A2826] text-white py-3.5 px-4 rounded-full font-bold text-xs sm:text-sm transition-all hover:-translate-y-0.5 cursor-pointer shadow-sm"
               >
-                Pedir Pack Mostrador Pro (59€)
+                Configurar y Pedir Mostrador Pro (59€) →
               </button>
             </div>
 
@@ -1859,10 +1889,10 @@ export default function App() {
               </div>
 
               <button
-                onClick={() => openDemoModal('Pack Comercio + Equipo (99€)')}
+                onClick={() => openConfigurator('equipo')}
                 className="w-full bg-[#C27803] hover:bg-[#A16207] text-white py-3.5 px-4 rounded-full font-bold text-xs sm:text-sm shadow-md transition-all hover:-translate-y-0.5 cursor-pointer"
               >
-                Pedir Pack Comercio + Equipo (99€) →
+                Configurar y Pedir Pack Comercio + Equipo (99€) →
               </button>
             </div>
 
@@ -1921,29 +1951,49 @@ export default function App() {
               </div>
 
               <button
-                onClick={() => openDemoModal('Pack Gran Equipo (159€)')}
+                onClick={() => openConfigurator('gran-equipo')}
                 className="w-full bg-[#F3F1EC] hover:bg-[#141311] text-[#141311] hover:text-white border border-[#E7E4DC] py-3.5 px-4 rounded-full font-bold text-xs sm:text-sm transition-all cursor-pointer"
               >
-                Pedir Pack Gran Equipo (159€)
+                Configurar y Pedir Gran Equipo (159€) →
               </button>
             </div>
           </div>
 
-          {/* ESCALA DE TARJETAS POR VOLUMEN */}
+          {/* ESCALA DE UNIDADES EXTRA & TARJETAS POR VOLUMEN */}
           <div className="bg-white border border-[#E7E4DC] rounded-xl p-8 shadow-sm mb-12">
-            <div className="mb-6">
-              <span className="font-mono text-xs text-[#C27803] font-bold tracking-wider uppercase block mb-1">
-                Ampliación Individual de Plantilla
-              </span>
-              <h3 className="text-2xl font-bold text-[#141311]">
-                Tarjetas de Bolsillo Sueltas por Volumen
-              </h3>
-              <p className="text-sm text-[#57534E]">
-                ¿Deseas sumar unidades extra para nuevos empleados o colaboradores?
-              </p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <span className="font-mono text-xs text-[#C27803] font-bold tracking-wider uppercase block mb-1">
+                  Ampliación de Mostradores y Plantilla
+                </span>
+                <h3 className="text-2xl font-bold text-[#141311]">
+                  Unidades Físicas Extra por Volumen
+                </h3>
+                <p className="text-sm text-[#57534E]">
+                  ¿Tienes varias barras, puntos de cobro o deseas sumar tarjetas adicionales para empleados?
+                </p>
+              </div>
+
+              <button
+                onClick={() => openConfigurator()}
+                className="px-5 py-2.5 bg-[#047857] hover:bg-[#065F46] text-white rounded-full text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+              >
+                <span>Abrir Configurador Completo</span>
+                <span>→</span>
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="bg-[#FFFBEB] border-2 border-[#C27803]/40 rounded-lg p-5 text-center">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#C27803] mb-1">
+                  Expositor Extra
+                </div>
+                <div className="font-['Outfit',sans-serif] text-2xl font-extrabold text-[#C27803] mb-1 tracking-[-0.03em]">
+                  +30 €
+                </div>
+                <div className="text-xs text-[#57534E] font-semibold">Cada soporte adicional</div>
+              </div>
+
               <div className="bg-[#FAF9F6] border border-[#E7E4DC] rounded-lg p-5 text-center hover:border-[#C27803] transition-all">
                 <div className="text-xs font-bold uppercase tracking-wider text-[#8C877E] mb-1">
                   1 Tarjeta
@@ -1974,15 +2024,15 @@ export default function App() {
                 <div className="text-xs text-[#C27803] font-semibold">22 € / unidad</div>
               </div>
 
-              <div className="bg-[#FFFBEB] border-2 border-[#C27803] rounded-lg p-5 text-center">
-                <div className="text-xs font-bold uppercase tracking-wider text-[#C27803] mb-1">
+              <div className="bg-[#FAF9F6] border border-[#E7E4DC] rounded-lg p-5 text-center">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#141311] mb-1">
                   Pack 10+ Tarjetas
                 </div>
-                <div className="font-['Outfit',sans-serif] text-2xl font-extrabold text-[#C27803] mb-1 tracking-[-0.03em]">
+                <div className="font-['Outfit',sans-serif] text-2xl font-extrabold text-[#141311] mb-1 tracking-[-0.03em]">
                   190 €
                 </div>
-                <div className="text-xs text-[#C27803] font-black">
-                  19 € / unidad (Máximo ahorro)
+                <div className="text-xs text-[#047857] font-black">
+                  19 € / ud (Máximo ahorro)
                 </div>
               </div>
             </div>
@@ -2429,6 +2479,20 @@ export default function App() {
             >
               Términos y Condiciones
             </button>
+            <span className="text-[#D6D3CD]">·</span>
+            <button
+              onClick={() => openAffiliatePortal()}
+              className="text-[#C27803] hover:underline font-bold transition-colors cursor-pointer"
+            >
+              🍽️ Portal de Afiliados (20% Comisión)
+            </button>
+            <span className="text-[#D6D3CD]">·</span>
+            <button
+              onClick={() => openConfigurator()}
+              className="text-[#047857] hover:underline font-bold transition-colors cursor-pointer"
+            >
+              📝 Configurador de Presupuestos
+            </button>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[#E7E4DC]/80">
@@ -2441,6 +2505,23 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* AFFILIATE / FOODIE PORTAL MODAL */}
+      <AffiliatePortal
+        isOpen={isAffiliatePortalOpen}
+        onClose={() => setIsAffiliatePortalOpen(false)}
+        onOpenConfigurator={() => {
+          setIsAffiliatePortalOpen(false);
+          setIsQuoteConfiguratorOpen(true);
+        }}
+      />
+
+      {/* ONLINE QUOTE & ORDER CONFIGURATOR MODAL */}
+      <QuoteConfiguratorModal
+        isOpen={isQuoteConfiguratorOpen}
+        onClose={() => setIsQuoteConfiguratorOpen(false)}
+        initialPack={selectedPackForConfigurator}
+      />
 
       {/* GDPR / RGPD LEGAL MODAL */}
       <LegalModal

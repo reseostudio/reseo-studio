@@ -44,7 +44,14 @@ export const CrmDashboard: React.FC<CrmDashboardProps> = ({
   onAddLead,
   onExportCsv,
 }) => {
-  const [activeTab, setActiveTab] = useState<'kanban' | 'tabla' | 'nuevo'>('kanban');
+  const [activeTab, setActiveTab] = useState<'kanban' | 'tabla' | 'nuevo' | 'prospección'>('kanban');
+
+  // Prospección B2B state
+  const [prospeccionUrl, setProspeccionUrl] = useState('');
+  const [prospeccionAnalisis, setProspeccionAnalisis] = useState<any>(null);
+  const [prospeccionLoading, setProspeccionLoading] = useState(false);
+  const [emailTemplate, setEmailTemplate] = useState('restaurante_pocas_resenas');
+  const [emailPersonalizado, setEmailPersonalizado] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('todos');
   const [selectedLeadForNotes, setSelectedLeadForNotes] = useState<LeadData | null>(null);
@@ -180,6 +187,147 @@ export const CrmDashboard: React.FC<CrmDashboardProps> = ({
     setActiveTab('kanban');
   };
 
+  // Helper: Obtener asunto del email según plantilla
+  const getEmailSubject = (template: string, analisis: any) => {
+    const negocio = analisis?.nombre || 'su negocio';
+
+    switch(template) {
+      case 'restaurante_pocas_resenas':
+        return `${negocio} → Multiplicar reseñas en Google Maps en 3 segundos`;
+      case 'hotel_rating_bajo':
+        return `Cómo ${negocio} puede superar a la competencia en Google Maps`;
+      case 'comercio_nuevo':
+        return `${negocio} → Estrategia relámpago para generar reseñas desde día 1`;
+      case 'followup_suave':
+        return `${negocio} - Seguimiento de nuestra propuesta`;
+      case 'followup_cierre':
+        return `${negocio} - Última oportunidad esta semana`;
+      default:
+        return `Propuesta personalizada para ${negocio}`;
+    }
+  };
+
+  // Helper: Generar email personalizado con IA
+  const generarEmailPersonalizado = (analisis: any, template: string) => {
+    const nombre = analisis?.contacto || 'Responsable';
+    const negocio = analisis?.nombre || 'su negocio';
+    const rating = analisis?.rating || 'N/A';
+    const reviews = analisis?.reviews || 0;
+    const ciudad = analisis?.ciudad || '';
+
+    if (template === 'restaurante_pocas_resenas') {
+      return `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #FAF9F6;">
+          <div style="background-color: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 25px;">
+              <div style="width: 48px; height: 48px; background-color: #141311; color: white; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: 900; font-size: 20px;">RS</div>
+              <h3 style="margin: 10px 0 0 0; color: #141311;">RESEO STUDIO</h3>
+            </div>
+
+            <p style="color: #141311; margin-bottom: 15px;">Hola ${nombre},</p>
+
+            <p style="color: #57534E; line-height: 1.6;">
+              He estado analizando la ficha de Google Maps de <strong>${negocio}</strong>${ciudad ? ` en ${ciudad}` : ''} y he visto que actualmente tienen <strong>${reviews} reseñas</strong> con un rating de <strong>${rating}⭐</strong>.
+            </p>
+
+            <p style="color: #57534E; line-height: 1.6;">
+              La mayoría de tus competidores están en la misma situación, pero hay una oportunidad clara de <strong>destacar en el Top 3 de Google Maps</strong> usando algo que muy pocos restaurantes están aprovechando aún: <strong>la tecnología NFC física</strong>.
+            </p>
+
+            <div style="background-color: #FFFBEB; padding: 20px; border-radius: 12px; border-left: 4px solid #C27803; margin: 20px 0;">
+              <p style="margin: 0; color: #141311; font-weight: 600;">
+                💡 ¿El problema del QR tradicional?
+              </p>
+              <p style="margin: 10px 0 0 0; color: #57534E; font-size: 14px;">
+                Que el cliente debe: sacar móvil → abrir cámara → enfocar → esperar carga → clickar link. <strong>Demasiada fricción = 0 reseñas.</strong>
+              </p>
+            </div>
+
+            <p style="color: #57534E; line-height: 1.6;">
+              Con nuestro sistema de <strong>expositor NFC + tarjetas de bolsillo</strong>, el cliente solo tiene que <strong>apoyar el móvil durante 3 segundos</strong> y se abre directamente la pantalla de 5 estrellas de Google Maps → verificada por GPS en tu local.
+            </p>
+
+            <div style="background-color: #F3F1EC; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 0; color: #141311; font-size: 14px; font-weight: 600;">📦 Pack recomendado para ${negocio}:</p>
+              <p style="margin: 10px 0 0 0; color: #57534E; font-size: 14px;">
+                <strong>Pack Comercio + Equipo (99€)</strong><br/>
+                • 1 Expositor acrílico con tu logo<br/>
+                • 2 Tarjetas NFC de bolsillo<br/>
+                • Configuración completa incluida<br/>
+                • Envío gratis 24-48h<br/>
+                • 14 días garantía o devolución 100%
+              </p>
+            </div>
+
+            <p style="color: #57534E; line-height: 1.6;">
+              Te puedo preparar una <strong>vídeo-demo gratuita de 60 segundos</strong> con la ficha de ${negocio} para que veas exactamente cómo funciona.
+            </p>
+
+            <p style="color: #57534E; line-height: 1.6;">
+              ¿Te interesa que te la envíe por WhatsApp o prefieres que hablemos directamente?
+            </p>
+
+            <div style="margin: 30px 0 20px 0; text-align: center;">
+              <a href="https://reseostudio.com" style="background-color: #047857; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">Ver más información</a>
+            </div>
+
+            <p style="color: #141311; margin: 25px 0 5px 0;">Un saludo,</p>
+            <p style="color: #141311; margin: 0; font-weight: 600;">Equipo RESEO STUDIO</p>
+            <p style="color: #78716C; margin: 5px 0 0 0; font-size: 13px;">📱 WhatsApp: +34 XXX XXX XXX</p>
+            <p style="color: #78716C; margin: 5px 0 0 0; font-size: 13px;">🌐 reseostudio.com</p>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E7E4DC; text-align: center;">
+              <p style="color: #A8A29E; font-size: 11px; margin: 0;">
+                Este email es una propuesta comercial personalizada basada en el análisis de tu perfil público de Google Maps.
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    if (template === 'comercio_nuevo') {
+      return `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #FAF9F6;">
+          <div style="background-color: white; padding: 30px; border-radius: 12px;">
+            <h3 style="color: #141311;">Hola ${nombre},</h3>
+            <p style="color: #57534E;">
+              He visto que <strong>${negocio}</strong> ${reviews === 0 ? 'aún no tiene reseñas' : 'está empezando'} en Google Maps.
+            </p>
+            <p style="color: #57534E;">
+              Los primeros 90 días son críticos para posicionarte. Con nuestro sistema NFC puedes conseguir <strong>5-10 reseñas verificadas la primera semana</strong>.
+            </p>
+            <p style="color: #57534E;">
+              ¿Te interesa una demo gratuita de 60s?
+            </p>
+            <p style="color: #141311; font-weight: 600;">Saludos,<br/>RESEO STUDIO</p>
+          </div>
+        </div>
+      `;
+    }
+
+    if (template === 'followup_suave') {
+      return `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <p>Hola ${nombre},</p>
+          <p>Espero que estés teniendo un buen día. Te escribo para saber si pudiste ver la propuesta que te envié sobre el sistema NFC para ${negocio}.</p>
+          <p>Entiendo que estás ocupado, solo quería saber si tienes alguna pregunta o necesitas más información.</p>
+          <p>Quedo atento,<br/>RESEO STUDIO</p>
+        </div>
+      `;
+    }
+
+    // Template por defecto
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <p>Hola ${nombre},</p>
+        <p>Te escribo sobre una propuesta para mejorar la visibilidad de ${negocio} en Google Maps.</p>
+        <p>¿Tienes 5 minutos para una llamada rápida?</p>
+        <p>Saludos,<br/>RESEO STUDIO</p>
+      </div>
+    `;
+  };
+
   // WhatsApp Pre-filled Scripts Generator
   const getWhatsAppScriptText = (lead: LeadData, type: 'demo' | 'seguimiento' | 'cierre') => {
     const nombre = lead.contacto || 'Responsable';
@@ -299,6 +447,17 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
               }`}
             >
               <span>📑 Lista & Filtros ({filteredLeads.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('prospección')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'prospección'
+                  ? 'bg-[#047857] text-white shadow-sm'
+                  : 'text-[#047857] hover:bg-[#D1FAE5]'
+              }`}
+            >
+              <Mail className="w-3.5 h-3.5" />
+              <span>🎯 Prospección B2B</span>
             </button>
             <button
               onClick={() => setActiveTab('nuevo')}
@@ -711,7 +870,248 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
             </div>
           )}
 
-          {/* TAB 3: MANUAL LEAD REGISTRATION */}
+          {/* TAB 3: PROSPECCIÓN B2B CON EMAILS MANUALES */}
+          {activeTab === 'prospección' && (
+            <div className="max-w-4xl mx-auto w-full bg-white p-8 rounded-3xl border border-[#E7E4DC] shadow-sm flex-grow overflow-y-auto">
+              <div className="flex items-center gap-2 mb-6 pb-4 border-b border-[#E7E4DC]">
+                <Mail className="w-6 h-6 text-[#047857]" />
+                <div>
+                  <h3 className="text-xl font-bold text-[#141311]">
+                    🎯 Prospección B2B - Sistema de Emails Manuales
+                  </h3>
+                  <p className="text-sm text-[#57534E] mt-1">
+                    Analiza negocios de Google Maps y genera emails personalizados con IA
+                  </p>
+                </div>
+              </div>
+
+              {/* URL Input y Análisis */}
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-[#141311] mb-2">
+                  🔗 URL de Google Maps del Negocio
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={prospeccionUrl}
+                    onChange={(e) => setProspeccionUrl(e.target.value)}
+                    placeholder="https://maps.google.com/..."
+                    className="flex-1 px-4 py-3 rounded-xl border border-[#E7E4DC] text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!prospeccionUrl) {
+                        alert('Por favor introduce una URL de Google Maps');
+                        return;
+                      }
+                      setProspeccionLoading(true);
+                      try {
+                        const response = await fetch('/api/analyze-google-maps', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ url: prospeccionUrl })
+                        });
+                        const data = await response.json();
+                        setProspeccionAnalisis(data);
+
+                        // Genera email automáticamente
+                        const emailHtml = generarEmailPersonalizado(data, emailTemplate);
+                        setEmailPersonalizado(emailHtml);
+                      } catch (error) {
+                        alert('Error al analizar. Intenta de nuevo.');
+                        console.error(error);
+                      }
+                      setProspeccionLoading(false);
+                    }}
+                    disabled={prospeccionLoading}
+                    className="px-6 py-3 bg-[#047857] hover:bg-[#065F46] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {prospeccionLoading ? (
+                      <>
+                        <span className="animate-spin">⏳</span>
+                        Analizando...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Analizar con IA
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-[#78716C] mt-2">
+                  💡 Pega la URL completa del negocio en Google Maps y la IA analizará su ficha
+                </p>
+              </div>
+
+              {/* Resultados del Análisis */}
+              {prospeccionAnalisis && (
+                <div className="mb-6 p-6 bg-[#F3F1EC] rounded-2xl border border-[#E7E4DC]">
+                  <h4 className="font-bold text-[#141311] mb-4 flex items-center gap-2">
+                    <span>📊</span>
+                    Análisis del Negocio
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="bg-white p-4 rounded-xl">
+                      <div className="text-2xl font-bold text-[#141311]">{prospeccionAnalisis.rating || 'N/A'}</div>
+                      <div className="text-xs text-[#57534E]">Rating</div>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl">
+                      <div className="text-2xl font-bold text-[#141311]">{prospeccionAnalisis.reviews || 0}</div>
+                      <div className="text-xs text-[#57534E]">Reseñas</div>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl">
+                      <div className="text-2xl font-bold text-[#047857]">{prospeccionAnalisis.potencial || 'Alto'}</div>
+                      <div className="text-xs text-[#57534E]">Potencial</div>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl">
+                      <div className="text-2xl font-bold text-[#C27803]">{prospeccionAnalisis.urgencia || 'Media'}</div>
+                      <div className="text-xs text-[#57534E]">Urgencia</div>
+                    </div>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl">
+                    <p className="text-sm text-[#57534E] font-bold mb-2">🤖 Análisis IA:</p>
+                    <p className="text-sm text-[#141311]">{prospeccionAnalisis.analisis || 'Cargando análisis...'}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Selector de Plantilla */}
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-[#141311] mb-2">
+                  📧 Plantilla de Email
+                </label>
+                <select
+                  value={emailTemplate}
+                  onChange={(e) => {
+                    setEmailTemplate(e.target.value);
+                    if (prospeccionAnalisis) {
+                      const emailHtml = generarEmailPersonalizado(prospeccionAnalisis, e.target.value);
+                      setEmailPersonalizado(emailHtml);
+                    }
+                  }}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E7E4DC] text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]"
+                >
+                  <option value="restaurante_pocas_resenas">🍽️ Restaurante - Pocas Reseñas</option>
+                  <option value="hotel_rating_bajo">🏨 Hotel - Rating Bajo</option>
+                  <option value="comercio_nuevo">🛍️ Comercio - Nuevo/Sin reseñas</option>
+                  <option value="followup_suave">📬 Follow-up Suave (3 días)</option>
+                  <option value="followup_cierre">🎯 Follow-up Cierre (7 días)</option>
+                </select>
+              </div>
+
+              {/* Vista Previa del Email */}
+              {emailPersonalizado && (
+                <div className="mb-6">
+                  <label className="block text-sm font-bold text-[#141311] mb-2">
+                    👁️ Vista Previa del Email
+                  </label>
+                  <div className="border border-[#E7E4DC] rounded-2xl overflow-hidden">
+                    <div className="bg-[#F3F1EC] px-4 py-3 border-b border-[#E7E4DC]">
+                      <div className="text-xs text-[#57534E] mb-1">Para: {prospeccionAnalisis?.email || 'cliente@ejemplo.com'}</div>
+                      <div className="text-sm font-bold text-[#141311]">Asunto: {getEmailSubject(emailTemplate, prospeccionAnalisis)}</div>
+                    </div>
+                    <div
+                      className="p-6 bg-white text-sm"
+                      dangerouslySetInnerHTML={{ __html: emailPersonalizado }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Botones de Acción */}
+              {emailPersonalizado && (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      // Copiar al portapapeles
+                      const tempDiv = document.createElement('div');
+                      tempDiv.innerHTML = emailPersonalizado;
+                      const texto = tempDiv.textContent || tempDiv.innerText;
+                      navigator.clipboard.writeText(texto);
+                      alert('✅ Email copiado al portapapeles');
+                    }}
+                    className="flex-1 px-6 py-4 bg-[#F3F1EC] hover:bg-[#E7E4DC] text-[#141311] rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Copiar Texto
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const email = prospeccionAnalisis?.email || '';
+                      const subject = encodeURIComponent(getEmailSubject(emailTemplate, prospeccionAnalisis));
+                      const tempDiv = document.createElement('div');
+                      tempDiv.innerHTML = emailPersonalizado;
+                      const body = encodeURIComponent(tempDiv.textContent || '');
+
+                      window.open(`https://mail.google.com/mail/?view=cm&to=${email}&su=${subject}&body=${body}`, '_blank');
+
+                      // Registrar en CRM como enviado
+                      if (prospeccionAnalisis) {
+                        const nuevoLead: LeadData = {
+                          id: Date.now().toString(),
+                          negocio: prospeccionAnalisis.nombre || 'Negocio Prospectado',
+                          ciudad: prospeccionAnalisis.ciudad || '',
+                          contacto: '',
+                          telefono: prospeccionAnalisis.telefono || '',
+                          email: prospeccionAnalisis.email || '',
+                          status: 'nuevo',
+                          origen: 'Prospección B2B Maps',
+                          timestamp: new Date().toISOString(),
+                          pack: '',
+                          demoSent: false,
+                          notes: `Email enviado con plantilla: ${emailTemplate}\nAnálisis: ${prospeccionAnalisis.analisis}`
+                        };
+                        onAddLead(nuevoLead);
+                        alert('✅ Email abierto en Gmail y lead guardado en CRM');
+                      }
+                    }}
+                    className="flex-1 px-6 py-4 bg-[#047857] hover:bg-[#065F46] text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <Mail className="w-4 h-4" />
+                    Abrir en Gmail
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const telefono = prospeccionAnalisis?.telefono?.replace(/[^\d]/g, '') || '';
+                      const tempDiv = document.createElement('div');
+                      tempDiv.innerHTML = emailPersonalizado;
+                      const mensaje = encodeURIComponent(tempDiv.textContent || '');
+
+                      window.open(`https://wa.me/${telefono}?text=${mensaje}`, '_blank');
+                    }}
+                    className="flex-1 px-6 py-4 bg-[#25D366] hover:bg-[#1DA851] text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    WhatsApp Web
+                  </button>
+                </div>
+              )}
+
+              {/* Estadísticas de Prospección */}
+              <div className="mt-8 pt-6 border-t border-[#E7E4DC]">
+                <h4 className="text-sm font-bold text-[#141311] mb-4">📊 Estadísticas de Hoy</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-[#F3F1EC] rounded-xl">
+                    <div className="text-2xl font-bold text-[#047857]">0</div>
+                    <div className="text-xs text-[#57534E]">Emails Enviados</div>
+                  </div>
+                  <div className="text-center p-4 bg-[#F3F1EC] rounded-xl">
+                    <div className="text-2xl font-bold text-[#C27803]">0</div>
+                    <div className="text-xs text-[#57534E]">WhatsApps Enviados</div>
+                  </div>
+                  <div className="text-center p-4 bg-[#F3F1EC] rounded-xl">
+                    <div className="text-2xl font-bold text-[#141311]">30</div>
+                    <div className="text-xs text-[#57534E]">Meta Diaria</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: MANUAL LEAD REGISTRATION */}
           {activeTab === 'nuevo' && (
             <div className="max-w-2xl mx-auto w-full bg-white p-8 rounded-3xl border border-[#E7E4DC] shadow-sm flex-grow overflow-y-auto">
               <div className="flex items-center gap-2 mb-6 pb-4 border-b border-[#E7E4DC]">
