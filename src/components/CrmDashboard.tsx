@@ -77,7 +77,7 @@ export const CrmDashboard: React.FC<CrmDashboardProps> = ({
 
   // WhatsApp Script Modal state
   const [scriptModalLead, setScriptModalLead] = useState<LeadData | null>(null);
-  const [selectedScriptType, setSelectedScriptType] = useState<'demo' | 'seguimiento' | 'cierre'>('demo');
+  const [selectedScriptType, setSelectedScriptType] = useState<'apertura' | 'demo' | 'seguimiento' | 'cierre'>('demo');
 
   // Manual Lead Form state
   const [manualNegocio, setManualNegocio] = useState('');
@@ -331,8 +331,46 @@ export const CrmDashboard: React.FC<CrmDashboardProps> = ({
     setActiveTab('kanban');
   };
 
+  // ---- Mensajes personalizados de apertura (generados por prospección) ----
+  const getPersonalizedMessages = (lead: LeadData): { whatsapp?: string; gmail_subject?: string; gmail_body?: string } | null => {
+    if (!lead.notas) return null;
+    try {
+      const parsed = JSON.parse(lead.notas);
+      return parsed && parsed.mensajes ? parsed.mensajes : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getFirstContactMessage = (lead: LeadData): string => {
+    const msg = getPersonalizedMessages(lead);
+    if (msg?.whatsapp?.trim()) return msg.whatsapp.trim();
+    const nombre = lead.negocio || 'tu negocio';
+    return `¡Hola! 👋 Soy de RESEO STUDIO.\n\nHe estado revisando la ficha de Google de ${nombre} y creo que podríais conseguir muchas más reseñas de 5★ (y salir antes en Google Maps) con un sistema NFC que deja la reseña lista en 3 segundos.\n\n¿Te interesa una demo gratuita de 60 segundos?`;
+  };
+
+  const openFirstContactWhatsApp = (lead: LeadData) => {
+    const cleanPhone = (lead.telefono || '').replace(/[^0-9]/g, '');
+    const message = getFirstContactMessage(lead);
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  const openEmailWithScript = (lead: LeadData) => {
+    const msg = getPersonalizedMessages(lead);
+    const subject = msg?.gmail_subject?.trim() || `Reseñas de Google para ${lead.negocio || 'tu negocio'}`;
+    const body = msg?.gmail_body?.trim() || getFirstContactMessage(lead);
+    const to = (lead.email || '').trim();
+    const url = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(url, '_blank');
+  };
+
   // WhatsApp Pre-filled Scripts Generator
-  const getWhatsAppScriptText = (lead: LeadData, type: 'demo' | 'seguimiento' | 'cierre') => {
+  const getWhatsAppScriptText = (lead: LeadData, type: 'apertura' | 'demo' | 'seguimiento' | 'cierre') => {
+    if (type === 'apertura') {
+      return getFirstContactMessage(lead);
+    }
+
     const nombre = lead.contacto || 'Responsable';
     const negocio = lead.negocio || 'tu negocio';
     const ciudad = lead.ciudad || '';
@@ -372,7 +410,7 @@ Te dejamos por aquí los detalles para confirmar el ${pack} para ${negocio}:
 En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabricar el material y enviártelo en 24/48h.`;
   };
 
-  const openWhatsAppWithScript = (lead: LeadData, type: 'demo' | 'seguimiento' | 'cierre') => {
+  const openWhatsAppWithScript = (lead: LeadData, type: 'apertura' | 'demo' | 'seguimiento' | 'cierre') => {
     const cleanPhone = lead.telefono.replace(/[^0-9]/g, '');
     const message = getWhatsAppScriptText(lead, type);
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
@@ -384,7 +422,7 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
     }
   };
 
-  const openScriptModal = (lead: LeadData, type: 'demo' | 'seguimiento' | 'cierre' = 'demo') => {
+  const openScriptModal = (lead: LeadData, type: 'apertura' | 'demo' | 'seguimiento' | 'cierre' = 'demo') => {
     setScriptModalLead(lead);
     setSelectedScriptType(type);
   };
@@ -673,6 +711,36 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
                             {/* WhatsApp Action Buttons */}
                             <div className="grid grid-cols-3 gap-1.5 pt-1">
                               <button
+                                onClick={() => openFirstContactWhatsApp(lead)}
+                                title="Primer contacto por WhatsApp (mensaje de apertura personalizado)"
+                                className="bg-[#25D366] hover:bg-[#1EBE5D] text-white text-[10px] font-extrabold py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                              >
+                                <MessageCircle className="w-3 h-3" />
+                                <span>1er Contacto</span>
+                              </button>
+
+                              <button
+                                onClick={() => openEmailWithScript(lead)}
+                                title="Enviar email de primer contacto (asunto y cuerpo personalizados)"
+                                className="bg-sky-500 hover:bg-sky-600 text-white text-[10px] font-extrabold py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                              >
+                                <Mail className="w-3 h-3" />
+                                <span>Email</span>
+                              </button>
+
+                              <button
+                                onClick={() => openScriptModal(lead, 'apertura')}
+                                title="Ver guión de apertura completo"
+                                className="bg-[#F3F1EC] hover:bg-[#E7E4DC] text-[#141311] text-[10px] font-extrabold py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                              >
+                                <Sparkles className="w-3 h-3" />
+                                <span>Guión</span>
+                              </button>
+                            </div>
+
+                            {/* WhatsApp Action Buttons: seguimiento y cierre */}
+                            <div className="grid grid-cols-3 gap-1.5">
+                              <button
                                 onClick={() => openWhatsAppWithScript(lead, 'demo')}
                                 title="Enviar Vídeo Demo por WhatsApp"
                                 className="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-extrabold py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
@@ -801,6 +869,20 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => openFirstContactWhatsApp(lead)}
+                          title="Primer contacto por WhatsApp (mensaje de apertura personalizado)"
+                          className="bg-[#25D366] hover:bg-[#1EBE5D] text-white text-[11px] font-bold px-3 py-2 rounded-lg cursor-pointer flex items-center gap-1"
+                        >
+                          <MessageCircle className="w-3 h-3" /> 1er Contacto
+                        </button>
+                        <button
+                          onClick={() => openEmailWithScript(lead)}
+                          title="Enviar email de primer contacto"
+                          className="bg-sky-500 hover:bg-sky-600 text-white text-[11px] font-bold px-3 py-2 rounded-lg cursor-pointer flex items-center gap-1"
+                        >
+                          <Mail className="w-3 h-3" /> Email
+                        </button>
                         <button
                           onClick={() => openWhatsAppWithScript(lead, 'seguimiento')}
                           className="bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-bold px-3 py-2 rounded-lg cursor-pointer flex items-center gap-1"
@@ -959,6 +1041,20 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
                             </td>
 
                             <td className="p-3.5 text-right whitespace-nowrap space-x-1.5">
+                              <button
+                                onClick={() => openFirstContactWhatsApp(lead)}
+                                title="Primer contacto por WhatsApp (mensaje de apertura)"
+                                className="bg-[#25D366] hover:bg-[#1EBE5D] text-white p-1.5 rounded-lg inline-flex items-center justify-center cursor-pointer"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => openEmailWithScript(lead)}
+                                title="Enviar email de primer contacto"
+                                className="bg-sky-500 hover:bg-sky-600 text-white p-1.5 rounded-lg inline-flex items-center justify-center cursor-pointer"
+                              >
+                                <Mail className="w-3.5 h-3.5" />
+                              </button>
                               <button
                                 onClick={() => openWhatsAppWithScript(lead, 'demo')}
                                 title="Enviar Vídeo Demo"
@@ -1259,7 +1355,17 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
               </div>
 
               {/* Script selector tabs */}
-              <div className="grid grid-cols-3 gap-2 bg-[#F3F1EC] p-1 rounded-xl">
+              <div className="grid grid-cols-4 gap-2 bg-[#F3F1EC] p-1 rounded-xl">
+                <button
+                  onClick={() => setSelectedScriptType('apertura')}
+                  className={`py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    selectedScriptType === 'apertura'
+                      ? 'bg-white text-[#1EBE5D] shadow-xs'
+                      : 'text-[#57534E]'
+                  }`}
+                >
+                  👋 0. Apertura
+                </button>
                 <button
                   onClick={() => setSelectedScriptType('demo')}
                   className={`py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
@@ -1268,7 +1374,7 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
                       : 'text-[#57534E]'
                   }`}
                 >
-                  🎬 1. Entrega de Demo
+                  🎬 1. Demo
                 </button>
                 <button
                   onClick={() => setSelectedScriptType('seguimiento')}
@@ -1278,7 +1384,7 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
                       : 'text-[#57534E]'
                   }`}
                 >
-                  ⏰ 2. Seguimiento 48h
+                  ⏰ 2. Seguim.
                 </button>
                 <button
                   onClick={() => setSelectedScriptType('cierre')}
@@ -1288,7 +1394,7 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
                       : 'text-[#57534E]'
                   }`}
                 >
-                  💳 3. Oferta & Pago
+                  💳 3. Oferta
                 </button>
               </div>
 
