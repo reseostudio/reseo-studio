@@ -6,6 +6,13 @@ export type LeadStatus =
   | 'cerrado_ganado'
   | 'descartado';
 
+export interface LeadActivity {
+  id: number;
+  type: string; // creado | nota | estado | demo | mensaje | llamada | seguimiento | importado
+  content: string;
+  created_at: string;
+}
+
 export interface LeadData {
   id: string;
   tipo: string;
@@ -23,6 +30,11 @@ export interface LeadData {
   demoSentDate?: string;
   notas?: string;
   valorEstimado?: number;
+  // Seguimiento (secuencia de 5 impactos)
+  followUpStage?: number; // 1..5
+  nextFollowUp?: string; // ISO date
+  lastContactDate?: string; // ISO date
+  activities?: LeadActivity[];
 }
 
 export const STATUS_CONFIG: Record<
@@ -78,3 +90,17 @@ export const STATUS_CONFIG: Record<
     description: 'No interesado / Sin respuesta',
   },
 };
+
+// Etiquetas de la secuencia de 5 impactos (plan de prospección)
+export const FOLLOW_UP_LABELS: Record<number, string> = {
+  1: 'Impacto 1 · Primer contacto (Día 1)',
+  2: 'Impacto 2 · Mini-vídeo valor (Día 2)',
+  3: 'Impacto 3 · Prueba social (Día 4)',
+  4: 'Impacto 4 · Urgencia / incentivo (Día 7)',
+  5: 'Impacto 5 · Break-up / cierre (Día 10)',
+};
+
+export function followUpLabel(stage: number | undefined): string {
+  const s = stage && FOLLOW_UP_LABELS[stage] ? stage : 1;
+  return FOLLOW_UP_LABELS[s] || FOLLOW_UP_LABELS[1];
+}

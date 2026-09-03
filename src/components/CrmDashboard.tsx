@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { LeadData, LeadStatus, STATUS_CONFIG } from '../types/crm';
+import { LeadData, LeadActivity, LeadStatus, STATUS_CONFIG, followUpLabel } from '../types/crm';
 import {
   Users,
   Video,
@@ -22,34 +22,59 @@ import {
   PhoneCall,
   Mail,
   MapPin,
-  Calendar
+  Calendar,
+  LogOut,
+  Upload,
+  History,
+  CalendarCheck,
+  Lock,
 } from 'lucide-react';
 
 interface CrmDashboardProps {
   isOpen: boolean;
   onClose: () => void;
   leads: LeadData[];
+  isAuthed: boolean;
+  onLogin: (password: string) => Promise<string | null>;
+  onLogout: () => void;
   onUpdateLead: (updatedLead: LeadData) => void;
   onDeleteLead: (leadId: string) => void;
   onAddLead: (newLead: LeadData) => void;
   onExportCsv: () => void;
+  onAdvanceFollowUp: (lead: LeadData) => void;
+  onAddActivity: (lead: LeadData, type: string, content: string) => void;
+  onImportRows: (rows: any[]) => Promise<number>;
 }
 
 export const CrmDashboard: React.FC<CrmDashboardProps> = ({
   isOpen,
   onClose,
   leads,
+  isAuthed,
+  onLogin,
+  onLogout,
   onUpdateLead,
   onDeleteLead,
   onAddLead,
   onExportCsv,
+  onAdvanceFollowUp,
+  onAddActivity,
+  onImportRows,
 }) => {
-  const [activeTab, setActiveTab] = useState<'kanban' | 'tabla' | 'nuevo'>('kanban');
+  const [activeTab, setActiveTab] = useState<'kanban' | 'tabla' | 'hoy' | 'nuevo'>('kanban');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('todos');
   const [selectedLeadForNotes, setSelectedLeadForNotes] = useState<LeadData | null>(null);
   const [tempNotes, setTempNotes] = useState('');
-  
+
+  // Login state
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  // Import state
+  const [importing, setImporting] = useState(false);
+
   // WhatsApp Script Modal state
   const [scriptModalLead, setScriptModalLead] = useState<LeadData | null>(null);
   const [selectedScriptType, setSelectedScriptType] = useState<'demo' | 'seguimiento' | 'cierre'>('demo');
@@ -65,6 +90,59 @@ export const CrmDashboard: React.FC<CrmDashboardProps> = ({
   const [manualNotas, setManualNotas] = useState('');
 
   if (!isOpen) return null;
+
+  // ---- Pantalla de login ----
+  if (!isAuthed) {
+    const submitLogin = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!loginPassword || loginLoading) return;
+      setLoginLoading(true);
+      setLoginError(null);
+      const err = await onLogin(loginPassword);
+      if (err) setLoginError(err);
+      setLoginLoading(false);
+    };
+    return (
+      <div className="fixed inset-0 z-50 bg-[#141311]/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="bg-[#FAF9F6] border border-[#E7E4DC] rounded-3xl w-full max-w-sm p-8 shadow-2xl">
+          <div className="text-center space-y-2 mb-6">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-[#141311] text-[#FBBF24] flex items-center justify-center text-2xl">
+              <Lock className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold text-[#141311]">CRM RESEO STUDIO</h2>
+            <p className="text-xs text-[#57534E]">
+              Acceso restringido. Introduce tu contraseña de administrador.
+            </p>
+          </div>
+          <form onSubmit={submitLogin} className="space-y-4">
+            <input
+              type="password"
+              autoFocus
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              placeholder="Contraseña"
+              className="w-full px-4 py-3 bg-white border border-[#E7E4DC] focus:border-[#C27803] rounded-xl text-sm outline-none"
+            />
+            {loginError && <p className="text-xs text-red-600 font-semibold">{loginError}</p>}
+            <button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full py-3 rounded-xl bg-[#141311] hover:bg-[#2A2826] text-white text-sm font-bold transition-all cursor-pointer disabled:opacity-50"
+            >
+              {loginLoading ? 'Entrando…' : 'Entrar al CRM'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-2 text-xs text-[#57534E] hover:text-[#141311] cursor-pointer"
+            >
+              Cerrar
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   // Key Metrics
   const metrics = useMemo(() => {
@@ -108,6 +186,78 @@ export const CrmDashboard: React.FC<CrmDashboardProps> = ({
     });
   }, [leads, searchQuery, filterStatus]);
 
+  // Leads con seguimiento vencido o para hoy
+  const dueLeads = useMemo(() => {
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    return leads
+      .filter((l) => l.status !== 'cerrado_ganado' && l.status !== 'descartado' && l.nextFollowUp)
+      .filter((l) => new Date(l.nextFollowUp as string).getTime() <= endOfToday.getTime())
+      .sort((a, b) => new Date(a.nextFollowUp as string).getTime() - new Date(b.nextFollowUp as string).getTime());
+  }, [leads]);
+
+  const fmtDate = (iso?: string) => {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  };
+
+  const isOverdue = (iso?: string) => {
+    if (!iso) return false;
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    return new Date(iso).getTime() < startOfToday.getTime();
+  };
+
+  // Importar CSV
+  const handleImportCsv = (file: File) => {
+    setImporting(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const text = String(reader.result || '');
+      const lines = text.split(/\r?\n/).filter((l) => l.trim());
+      if (lines.length < 2) {
+        alert('El archivo no tiene datos. Espera una cabecera + filas.');
+        setImporting(false);
+        return;
+      }
+      const header = lines[0].split(/[;,\t]/).map((h) => h.trim().toLowerCase());
+      const rows = lines
+        .slice(1)
+        .map((line) => {
+          const cols = line.split(/[;,\t]/);
+          const obj: any = {};
+          header.forEach((h, i) => {
+            obj[h] = (cols[i] || '').trim();
+          });
+          return {
+            negocio: obj.negocio || obj.nombre || obj['nombre del negocio'] || obj['negocio / empresa'] || '',
+            ciudad: obj.ciudad || obj.zona || obj['ciudad / zona'] || '',
+            contacto: obj.contacto || obj['persona de contacto'] || obj['dueño'] || '',
+            telefono: obj.telefono || obj['teléfono'] || obj['telefono / whatsapp'] || obj.whatsapp || '',
+            email: obj.email || obj.correo || '',
+            pack: obj.pack || obj['pack solicitado'] || 'Pack Comercio + Equipo (99€)',
+            notas: obj.notas || obj['notas comerciales'] || '',
+          };
+        })
+        .filter((r) => r.negocio);
+      if (rows.length === 0) {
+        alert('No se detectó ninguna fila válida con nombre de negocio.');
+        setImporting(false);
+        return;
+      }
+      const inserted = await onImportRows(rows);
+      alert(`Importación completada: ${inserted} leads añadidos.`);
+      setImporting(false);
+    };
+    reader.onerror = () => {
+      alert('Error al leer el archivo');
+      setImporting(false);
+    };
+    reader.readAsText(file, 'utf-8');
+  };
+
   // Status Changer
   const handleStatusChange = (lead: LeadData, newStatus: LeadStatus) => {
     const isNowSent = newStatus === 'demo_enviada';
@@ -144,6 +294,7 @@ export const CrmDashboard: React.FC<CrmDashboardProps> = ({
       ...selectedLeadForNotes,
       notas: tempNotes,
     });
+    if (tempNotes.trim()) onAddActivity(selectedLeadForNotes, 'nota', tempNotes.trim());
     setSelectedLeadForNotes(null);
   };
 
@@ -301,6 +452,16 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
               <span>📑 Lista & Filtros ({filteredLeads.length})</span>
             </button>
             <button
+              onClick={() => setActiveTab('hoy')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'hoy'
+                  ? 'bg-white text-[#141311] shadow-sm'
+                  : 'text-[#57534E] hover:text-[#141311]'
+              }`}
+            >
+              <span>🔔 Hoy ({dueLeads.length})</span>
+            </button>
+            <button
               onClick={() => setActiveTab('nuevo')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'nuevo'
@@ -315,6 +476,23 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
 
           {/* Quick Actions & Close */}
           <div className="flex items-center gap-2">
+            <label
+              title="Importar leads desde CSV"
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{importing ? 'Importando…' : 'Importar CSV'}</span>
+              <input
+                type="file"
+                accept=".csv,.txt"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleImportCsv(f);
+                  e.target.value = '';
+                }}
+              />
+            </label>
             <button
               onClick={onExportCsv}
               title="Descargar base de datos en CSV / Excel"
@@ -322,6 +500,13 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
             >
               <Download className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Exportar Excel</span>
+            </button>
+            <button
+              onClick={onLogout}
+              title="Cerrar sesión"
+              className="w-10 h-10 rounded-xl bg-[#F3F1EC] hover:bg-[#E7E4DC] text-[#57534E] hover:text-[#141311] flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
             </button>
             <button
               onClick={onClose}
@@ -461,6 +646,23 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
                               </div>
                             </div>
 
+                            {/* Follow-up info */}
+                            <div className="text-[11px] flex items-center justify-between gap-2">
+                              <div className="text-[#57534E] flex items-center gap-1 min-w-0">
+                                <Calendar className="w-3 h-3 shrink-0 text-[#C27803]" />
+                                <span className={`truncate ${isOverdue(lead.nextFollowUp) ? 'text-red-600 font-bold' : ''}`}>
+                                  {followUpLabel(lead.followUpStage)} · {fmtDate(lead.nextFollowUp)}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => onAdvanceFollowUp(lead)}
+                                title="Marcar seguimiento como realizado y programar el siguiente impacto"
+                                className="shrink-0 text-[10px] font-extrabold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 cursor-pointer"
+                              >
+                                ✓ Hecho
+                              </button>
+                            </div>
+
                             {/* Notes snippet if exists */}
                             {lead.notas && (
                               <div className="text-[11px] text-[#57534E] bg-amber-50/60 border border-amber-200/60 p-2 rounded-lg italic">
@@ -544,6 +746,84 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* TAB HOY: SEGUIMIENTOS PENDIENTES */}
+          {activeTab === 'hoy' && (
+            <div className="flex-grow overflow-y-auto pb-4">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-[#141311] flex items-center gap-2">
+                    <CalendarCheck className="w-5 h-5 text-[#C27803]" /> Seguimientos de Hoy
+                  </h3>
+                  <p className="text-xs text-[#57534E]">
+                    Leads con contacto pendiente hoy o atrasado (secuencia de 5 impactos).
+                  </p>
+                </div>
+                <span className="bg-[#141311] text-[#FBBF24] text-xs font-black px-3 py-1 rounded-full">
+                  {dueLeads.length}
+                </span>
+              </div>
+
+              {dueLeads.length === 0 ? (
+                <div className="text-center py-16 text-sm text-[#8C877E]">
+                  🎉 No tienes seguimientos pendientes hoy.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {dueLeads.map((lead) => (
+                    <div
+                      key={lead.id}
+                      className={`bg-white rounded-2xl p-4 border shadow-sm flex flex-col sm:flex-row sm:items-center gap-3 ${
+                        isOverdue(lead.nextFollowUp) ? 'border-red-300 bg-red-50/50' : 'border-[#E7E4DC]'
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-sm text-[#141311]">{lead.negocio}</h4>
+                          {isOverdue(lead.nextFollowUp) && (
+                            <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              ATRASADO
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-[#57534E] flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                          <span>👤 {lead.contacto || '—'}</span>
+                          <span>📞 {lead.telefono || '—'}</span>
+                          <span className="text-[#8C877E]">📍 {lead.ciudad || '—'}</span>
+                        </div>
+                        <div className="text-[11px] text-[#8C877E] mt-1">
+                          {followUpLabel(lead.followUpStage)} · Próximo:{' '}
+                          <span className={isOverdue(lead.nextFollowUp) ? 'text-red-600 font-bold' : 'font-bold'}>
+                            {fmtDate(lead.nextFollowUp)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => openWhatsAppWithScript(lead, 'seguimiento')}
+                          className="bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-bold px-3 py-2 rounded-lg cursor-pointer flex items-center gap-1"
+                        >
+                          <Send className="w-3 h-3" /> Seguimiento
+                        </button>
+                        <button
+                          onClick={() => onAdvanceFollowUp(lead)}
+                          className="bg-[#141311] hover:bg-[#2A2826] text-[#FBBF24] text-[11px] font-bold px-3 py-2 rounded-lg cursor-pointer flex items-center gap-1"
+                        >
+                          <CheckCircle2 className="w-3 h-3" /> Hecho
+                        </button>
+                        <button
+                          onClick={() => openNotesModal(lead)}
+                          className="bg-[#F3F1EC] hover:bg-[#E7E4DC] text-[#141311] text-[11px] font-bold px-3 py-2 rounded-lg cursor-pointer"
+                        >
+                          Notas
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -906,6 +1186,29 @@ En cuanto lo completes, te solicitamos tu logotipo en buena calidad para fabrica
                   className="w-full p-3 bg-[#FAF9F6] border border-[#E7E4DC] focus:border-[#C27803] rounded-xl text-xs outline-none"
                 />
               </div>
+
+              {(selectedLeadForNotes.activities?.length ?? 0) > 0 && (
+                <div className="space-y-2">
+                  <div className="text-xs font-bold text-[#141311] flex items-center gap-1.5">
+                    <History className="w-3.5 h-3.5 text-[#C27803]" /> Historial de actividad
+                  </div>
+                  <div className="max-h-40 overflow-y-auto space-y-1.5 bg-[#FAF9F6] rounded-xl p-3 border border-[#E7E4DC]">
+                    {(selectedLeadForNotes.activities || [])
+                      .slice()
+                      .reverse()
+                      .map((a: LeadActivity) => (
+                        <div key={a.id} className="text-[11px] flex items-start gap-2">
+                          <span className="text-[#8C877E] shrink-0 font-mono">
+                            {new Date(a.created_at).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span className="text-[#57534E]">
+                            <span className="font-bold text-[#141311] capitalize">{a.type}:</span> {a.content}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button

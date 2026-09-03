@@ -41,6 +41,7 @@ export default function App() {
     }
   });
   const [crmSearch, setCrmSearch] = useState('');
+  const [isAdminAuthed, setIsAdminAuthed] = useState(false);
 
   // Demo Form State
   const [formBizName, setFormBizName] = useState('');
@@ -229,18 +230,110 @@ export default function App() {
     document.body.style.overflow = 'auto';
   };
 
-  // Fetch leads from server on initial load
-  useEffect(() => {
-    fetch('/api/leads')
-      .then((res) => res.json())
+  // ---- Autenticación CRM ----
+  const getToken = () => localStorage.getItem('reseostudio_admin_token');
+  const authHeaders = () => {
+    const t = getToken();
+    return { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) };
+  };
+
+  const fetchLeads = () => {
+    const t = getToken();
+    if (!t) return;
+    fetch('/api/leads', { headers: { Authorization: `Bearer ${t}` } })
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => {
-        if (data.leads && Array.isArray(data.leads) && data.leads.length > 0) {
+        if (data.leads && Array.isArray(data.leads)) {
           setCrmLeads(data.leads);
           localStorage.setItem('reseostudio_leads', JSON.stringify(data.leads));
         }
       })
-      .catch((e) => console.log('Leads sincronizados desde localStorage:', e));
+      .catch(() => {});
+  };
+
+  // Al cargar: validar token guardado
+  useEffect(() => {
+    const t = getToken();
+    if (!t) return;
+    fetch('/api/auth/check', { headers: { Authorization: `Bearer ${t}` } })
+      .then((res) => {
+        if (res.ok) {
+          setIsAdminAuthed(true);
+          fetchLeads();
+        } else {
+          localStorage.removeItem('reseostudio_admin_token');
+          setIsAdminAuthed(false);
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleCrmLogin = async (password: string): Promise<string | null> => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (data?.token) {
+        localStorage.setItem('reseostudio_admin_token', data.token);
+        setIsAdminAuthed(true);
+        fetchLeads();
+        return null;
+      }
+      return data?.error || 'Contraseña incorrecta';
+    } catch {
+      return 'Error de conexión con el servidor';
+    }
+  };
+
+  const handleCrmLogout = () => {
+    localStorage.removeItem('reseostudio_admin_token');
+    setIsAdminAuthed(false);
+    setCrmLeads([]);
+  };
+
+  const handleAdvanceFollowUp = (lead: LeadData) => {
+    fetch(`/api/leads/${lead.id}/activities`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ type: 'seguimiento', content: 'Seguimiento realizado', advance: true }),
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        if (data?.lead) setCrmLeads((prev) => prev.map((l) => (l.id === lead.id ? data.lead : l)));
+      })
+      .catch(() => {});
+  };
+
+  const handleAddActivity = (lead: LeadData, type: string, content: string) => {
+    fetch(`/api/leads/${lead.id}/activities`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ type, content }),
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        if (data?.lead) setCrmLeads((prev) => prev.map((l) => (l.id === lead.id ? data.lead : l)));
+      })
+      .catch(() => {});
+  };
+
+  const handleImportRows = (rows: any[]): Promise<number> => {
+    return fetch('/api/import', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ rows }),
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        fetchLeads();
+        return data?.inserted || 0;
+      })
+      .catch(() => 0);
+  };
 
   // Save Lead to Local Database & Server
   const saveLeadToDatabase = async (leadInput: Omit<LeadData, 'id' | 'timestamp' | 'target_email' | 'status'>) => {
@@ -282,7 +375,7 @@ export default function App() {
 
     fetch(`/api/leads/${updatedLead.id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(updatedLead),
     }).catch((err) => console.error('Error updating lead on server:', err));
   };
@@ -295,6 +388,7 @@ export default function App() {
 
     fetch(`/api/leads/${id}`, {
       method: 'DELETE',
+      headers: authHeaders(),
     }).catch((err) => console.error('Error deleting lead from server:', err));
   };
 
@@ -2061,10 +2155,16 @@ export default function App() {
         isOpen={isCrmOpen}
         onClose={() => setIsCrmOpen(false)}
         leads={crmLeads}
+        isAuthed={isAdminAuthed}
+        onLogin={handleCrmLogin}
+        onLogout={handleCrmLogout}
         onUpdateLead={handleUpdateLead}
         onDeleteLead={handleDeleteLead}
         onAddLead={handleAddLead}
         onExportCsv={exportLeadsToCsv}
+        onAdvanceFollowUp={handleAdvanceFollowUp}
+        onAddActivity={handleAddActivity}
+        onImportRows={handleImportRows}
       />
 
       {/* MODAL / FORMULARIO SOLICITUD VÍDEO DEMO */}

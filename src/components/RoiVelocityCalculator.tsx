@@ -154,7 +154,7 @@ export const RoiVelocityCalculator: React.FC = () => {
 
           <p className="text-[11px] text-slate-400 text-center">
             *Estimación conservadora basada en un 15% de adopción del cliente en el momento del
-            pago/atención. La inversión del Kit Pro (69 €) se amortiza habitualmente en los primeros 3
+            pago/atención. La inversión del Pack Mostrador Pro (59 €) se amortiza habitualmente en los primeros 3
             días.
           </p>
         </div>

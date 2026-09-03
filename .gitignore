@@ -5,3 +5,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Base de datos SQLite en runtime (leads = datos personales, nunca subir a git)
+data/
