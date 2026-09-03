@@ -89,6 +89,58 @@ export const CrmDashboard: React.FC<CrmDashboardProps> = ({
   const [manualOrigen, setManualOrigen] = useState('Prospección Directa Maps');
   const [manualNotas, setManualNotas] = useState('');
 
+  // Key Metrics
+  const metrics = useMemo(() => {
+    const total = leads.length;
+    const pendientes = leads.filter(
+      (l) => l.status === 'nuevo' || l.status === 'grabando_demo'
+    ).length;
+    const demosEnviadas = leads.filter(
+      (l) => l.status === 'demo_enviada' || l.demoSent === true
+    ).length;
+    const enNegociacion = leads.filter((l) => l.status === 'en_negociacion').length;
+    const ganados = leads.filter((l) => l.status === 'cerrado_ganado');
+    const totalGanados = ganados.length;
+    
+    // Calculate estimated revenue
+    const revenue = ganados.reduce((acc, lead) => {
+      if (lead.pack?.includes('59')) return acc + 59;
+      if (lead.pack?.includes('159')) return acc + 159;
+      return acc + 99; // Default recommended pack
+    }, 0);
+
+    const conversionRate = total > 0 ? Math.round((totalGanados / total) * 100) : 0;
+
+    return { total, pendientes, demosEnviadas, enNegociacion, totalGanados, revenue, conversionRate };
+  }, [leads]);
+
+  // Filtered Leads
+  const filteredLeads = useMemo(() => {
+    return leads.filter((lead) => {
+      const q = searchQuery.toLowerCase();
+      const matchesQuery =
+        !q ||
+        lead.negocio.toLowerCase().includes(q) ||
+        lead.ciudad.toLowerCase().includes(q) ||
+        lead.contacto.toLowerCase().includes(q) ||
+        lead.telefono.toLowerCase().includes(q) ||
+        lead.email.toLowerCase().includes(q);
+
+      const matchesStatus = filterStatus === 'todos' || lead.status === filterStatus;
+      return matchesQuery && matchesStatus;
+    });
+  }, [leads, searchQuery, filterStatus]);
+
+  // Leads con seguimiento vencido o para hoy
+  const dueLeads = useMemo(() => {
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    return leads
+      .filter((l) => l.status !== 'cerrado_ganado' && l.status !== 'descartado' && l.nextFollowUp)
+      .filter((l) => new Date(l.nextFollowUp as string).getTime() <= endOfToday.getTime())
+      .sort((a, b) => new Date(a.nextFollowUp as string).getTime() - new Date(b.nextFollowUp as string).getTime());
+  }, [leads]);
+
   if (!isOpen) return null;
 
   // ---- Pantalla de login ----
@@ -143,58 +195,6 @@ export const CrmDashboard: React.FC<CrmDashboardProps> = ({
       </div>
     );
   }
-
-  // Key Metrics
-  const metrics = useMemo(() => {
-    const total = leads.length;
-    const pendientes = leads.filter(
-      (l) => l.status === 'nuevo' || l.status === 'grabando_demo'
-    ).length;
-    const demosEnviadas = leads.filter(
-      (l) => l.status === 'demo_enviada' || l.demoSent === true
-    ).length;
-    const enNegociacion = leads.filter((l) => l.status === 'en_negociacion').length;
-    const ganados = leads.filter((l) => l.status === 'cerrado_ganado');
-    const totalGanados = ganados.length;
-    
-    // Calculate estimated revenue
-    const revenue = ganados.reduce((acc, lead) => {
-      if (lead.pack?.includes('59')) return acc + 59;
-      if (lead.pack?.includes('159')) return acc + 159;
-      return acc + 99; // Default recommended pack
-    }, 0);
-
-    const conversionRate = total > 0 ? Math.round((totalGanados / total) * 100) : 0;
-
-    return { total, pendientes, demosEnviadas, enNegociacion, totalGanados, revenue, conversionRate };
-  }, [leads]);
-
-  // Filtered Leads
-  const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
-      const q = searchQuery.toLowerCase();
-      const matchesQuery =
-        !q ||
-        lead.negocio.toLowerCase().includes(q) ||
-        lead.ciudad.toLowerCase().includes(q) ||
-        lead.contacto.toLowerCase().includes(q) ||
-        lead.telefono.toLowerCase().includes(q) ||
-        lead.email.toLowerCase().includes(q);
-
-      const matchesStatus = filterStatus === 'todos' || lead.status === filterStatus;
-      return matchesQuery && matchesStatus;
-    });
-  }, [leads, searchQuery, filterStatus]);
-
-  // Leads con seguimiento vencido o para hoy
-  const dueLeads = useMemo(() => {
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
-    return leads
-      .filter((l) => l.status !== 'cerrado_ganado' && l.status !== 'descartado' && l.nextFollowUp)
-      .filter((l) => new Date(l.nextFollowUp as string).getTime() <= endOfToday.getTime())
-      .sort((a, b) => new Date(a.nextFollowUp as string).getTime() - new Date(b.nextFollowUp as string).getTime());
-  }, [leads]);
 
   const fmtDate = (iso?: string) => {
     if (!iso) return '—';
