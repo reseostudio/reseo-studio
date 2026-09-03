@@ -1,14 +1,15 @@
-FROM node:20-alpine
+FROM node:26-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# better-sqlite3 (módulo nativo). El package-lock marca hasInstallScript,
+# así que npm intenta node-gyp rebuild; le damos las herramientas para que
+# compile correctamente sobre Node 26 (ABI correcto, sin el SIGSEGV de Node 20).
+RUN apk add --no-cache python3 make g++
 
-# Install production dependencies only (super fast & lightweight)
+COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copy entire pre-built app
 COPY . .
 
 ENV NODE_ENV=production
